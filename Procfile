@@ -1,0 +1,1 @@
+web: gunicorn load_facemap_model_flask:app

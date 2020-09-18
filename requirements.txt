@@ -8,3 +8,5 @@ numpy==1.19.1
 Pillow==7.2.0
 tensorflow==2.3.0
 gunicorn==20.0.4
+opencv-contrib-python==4.4.0.42
+imageio==2.9.0

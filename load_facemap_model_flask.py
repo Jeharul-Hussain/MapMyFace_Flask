@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, url_for, render_template
+from flask import Flask, flash, request, jsonify, url_for, render_template, redirect
 import uuid
 import os
 from os.path import join
@@ -18,14 +18,20 @@ import glob
 ALLOWED_EXTENSION  =set(['png','jpg','jpeg'])
 IMG_SHAPE =50
 
+
+#gpus = tf.config.experimental.list_physical_devices('GPU')
+#tf.config.experimental.set_virtual_device_configuration(gpus[0],[tf.config.experimental.VirtualDeviceConfiguration(memory_limit=1024)])
+
 #os.chdir(r'/home/jeharul/practice_space/data/just_patches/temp')
 
 def allowed_file(filename):
     return '.' in filename and \
      filename.rsplit('.',1)[1] in ALLOWED_EXTENSION
 
-
+UPLOAD_FOLDER = os.getcwd() + '/input'
 app = Flask(__name__)
+app.secret_key = "secret key"
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 
 @app.route('/')
@@ -63,6 +69,10 @@ def upload_image():
         #x  = image.img_to_array(img)
         #x = np.expand_dims(x, axis=0)
         imcv = cv2.cvtColor(np.asarray(img), cv2.COLOR_RGB2BGR)
+
+        if os.path.exists(input_path) and os.path.isdir(input_path):
+            shutil.rmtree(input_path)
+            print('input directory removed')
         
         if not os.path.exists(input_path):
             os.makedirs(input_path)
@@ -75,10 +85,6 @@ def upload_image():
         
         extract_face_features.extract_patches(input_path + "/" + filename)
 
-
-        if os.path.exists(input_path) and os.path.isdir(input_path):
-            shutil.rmtree(input_path)
-            print('input directory removed') 
 
         if os.path.exists(output_path):
             path = os.path.join(output_path, '*g')
@@ -93,22 +99,31 @@ def upload_image():
             image = cv2.imread(img)
             im_resize = cv2.resize(image,(IMG_SHAPE,IMG_SHAPE), interpolation=cv2.INTER_CUBIC)
             im_resize_copy = im_resize.copy()/255.
-
+            	
             prediction = model.predict(im_resize_copy[np.newaxis,...])
             print("prediction is :{}".format(np.argmax(prediction)))
             label.append(np.argmax(prediction))
 
         if one in label:
             print("Acne Detected")
-            items.append("Acne")
+            items.append("Acne Detected")
         else:
             print("No Acne Detected")
-            items.append("No Acne")
+            items.append("No Acne Detected")
 
-        response = {'pred': items}
-        return render_template('ImageML.html', prediction = 'Looks like {}'.format(response))
+        response = {'prediction': items}
+        #return render_template('ImageML.html', prediction = 'Looks like {}'.format(response))
+        print("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF {}".format(filename))
+        filename = secure_filename(file.filename)
+        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        flash('Image successfully uploaded and displayed : {}'.format(response))
+        return render_template('ImageML.html', filename=filename)
     else:
         return render_template('ImageML.html', prediction = 'Invalid File extension')
+
+@app.route('/display/<filename>')
+def display_image(filename):
+    return redirect(url_for(app.config['UPLOAD_FOLDER'], filename='/' + filename), code=301)
 
 if __name__ == '__main__':
     app.run(debug=True, use_reloader=False)

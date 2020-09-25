@@ -54,7 +54,7 @@ def upload_image():
         split_filename = split_filename.split("_")[0]
         print("Image prefix value --> "+split_filename)
         
-        model = load_model(os.path.join(os.getcwd()+"/","acne_noacne_classification_extracted.h5"))
+        model = load_model(os.path.join(os.getcwd()+"/","acne_noacne_classification.h5"))
         output_path = os.getcwd() + "/test"
         input_path = os.getcwd() + "/input"
 
